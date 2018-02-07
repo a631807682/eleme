@@ -4,7 +4,7 @@ const cookie = require('./cookie')
 
 const origin = 'https://h5.ele.me'
 
-async function request ({mobile, url} = {}) {
+async function request({ mobile, url } = {}) {
   console.log('请求', [url, mobile])
 
   if (!url || !mobile) {
@@ -32,14 +32,14 @@ async function request ({mobile, url} = {}) {
     }]
   })
 
-  return (async function lottery (phone) {
+  return (async function lottery(phone) {
     const sns = cookie[index]
 
-    if (!query.sn
-      || !query.lucky_number
-      || isNaN(query.lucky_number)
-      || url.indexOf(`${origin}/hongbao/`) !== 0
-      || !sns) {
+    if (!query.sn ||
+      !query.lucky_number ||
+      isNaN(query.lucky_number) ||
+      url.indexOf(`${origin}/hongbao/`) !== 0 ||
+      !sns) {
       throw new Error('饿了么红包链接不正确 或 请求饿了么服务器失败')
     }
 
@@ -52,7 +52,7 @@ async function request ({mobile, url} = {}) {
     console.log('绑定手机号', phone)
 
     // 领红包
-    const {data: {promotion_records = []}} = await request.post(`/restapi/marketing/promotion/weixin/${sns.openid}`, {
+    const { data: { promotion_records = [] } } = await request.post(`/restapi/marketing/promotion/weixin/${sns.openid}`, {
       device_id: '',
       group_sn: query.sn,
       hardware_id: '',
@@ -73,23 +73,32 @@ async function request ({mobile, url} = {}) {
       // 有时候领取成功了，但是没有返回 lucky，再调一次就可以了
       const lucky = promotion_records.find(r => r.is_lucky) || await lottery(phone)
       console.log('手气最佳红包已被领取', JSON.stringify(lucky))
-      return lucky
-        ? `红包领取完毕\n\n手气最佳：${lucky.sns_username}\n红包金额：${lucky.amount} 元`
-        : '服务器繁忙 或 红包被别人抢完'
+      return lucky ?
+        `红包领取完毕\n\n手气最佳：${lucky.sns_username}\n红包金额：${lucky.amount} 元` :
+        '服务器繁忙 或 红包被别人抢完'
     }
 
     console.log(`还要领 ${number} 个红包才是手气最佳`)
     index++
+
+    //指定休眠时间
+    await sleep(3000);
 
     // 如果这个是最佳红包，换成指定的手机号领取
     return lottery(number === 1 ? mobile : null)
   })()
 }
 
-function response (options) {
+function sleep(delay) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, delay);
+  })
+}
+
+function response(options) {
   return new Promise(async resolve => {
     try {
-      resolve({message: await request(options)})
+      resolve({ message: await request(options) })
     } catch (e) {
       console.error(e)
       resolve({
